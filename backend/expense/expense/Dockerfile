@@ -1,4 +1,6 @@
-From openjdk:17
+From eclipse-temurin:17-jdk
 WORKDIR /app
-COPY target/*.jar app.jar
-ENTRYPOINT ["java", "-jar", "app.jar"]
+COPY . . 
+RUN chmod +x mvnw
+RUN ./mvnw clean package -DskipTests
+CMD ["java", "-jar", "target/*.jar"]

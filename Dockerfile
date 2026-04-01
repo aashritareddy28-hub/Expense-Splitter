@@ -1,6 +1,7 @@
 From eclipse-temurin:17-jdk
 WORKDIR /app
-COPY backend\expense/expense /app
+COPY . /app
+WORKDIR /app/backend/expense/expense
 RUN chmod +x mvnw
 RUN ./mvnw clean package -DskipTests
-CMD ["java", "-jar", "target/*.jar"]
+CMD sh -c "java -jar target/*.jar"

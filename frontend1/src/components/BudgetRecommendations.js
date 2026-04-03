@@ -49,7 +49,7 @@ function BudgetRecommendations() {
     ){
         return (
             <div style={{ padding: "20px", textAlign: "center" }}>
-                <p>{recommendations?.message || 
+                <p>{recommendations?.message ??
                 "No budget recommendations available. Add more expenses to get personalized recommendations."}</p>
             </div>
         );

@@ -1,8 +1,9 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:9090/api/expenses";
-const PERSONS_API_URL = "http://localhost:9090/api/persons";
-const AUTH_API_URL = "http://localhost:9090/api/auth";
+const BASE_URL = "https://expense-splitter-production-93dc.up.railway.app/";
+const API_URL = BASE_URL+"api/expenses";
+const PERSONS_API_URL = BASE_URL+"api/persons";
+const AUTH_API_URL = BASE_URL+"api/auth";
 
 class ExpenseService{
 

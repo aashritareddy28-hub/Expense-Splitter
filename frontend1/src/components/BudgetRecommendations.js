@@ -41,12 +41,14 @@ function BudgetRecommendations() {
     }
 
     if (
-        !recommendations || !recommendations.budgetSuggestions || recommendations.budgetSuggestions.length === 0
-    )
-{
+        !recommendations || 
+        !recommendations.budgetSuggestions || 
+        recommendations.budgetSuggestions.length === 0
+    ){
         return (
             <div style={{ padding: "20px", textAlign: "center" }}>
-                <p>{recommendations?.message || "No budget recommendations available. Add more expenses to get personalized recommendations."}</p>
+                <p>{recommendations?.message || 
+                "No budget recommendations available. Add more expenses to get personalized recommendations."}</p>
             </div>
         );
     }

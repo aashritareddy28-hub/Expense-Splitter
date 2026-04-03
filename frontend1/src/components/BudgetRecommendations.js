@@ -65,7 +65,7 @@ function BudgetRecommendations() {
             </div>
 
             {/* Category Recommendations */}
-            {recommendations.budgetSuggestions && recommendations.budgetSuggestions.length > 0 && (
+            {(recommendations.budgetSuggestions && recommendations.budgetSuggestions.length > 0) && (
                 <div>
                     <h3>Category-Specific Budgets</h3>
                     <div style={{ display: "grid", gap: "15px" }}>

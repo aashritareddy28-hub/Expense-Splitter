@@ -1,5 +1,4 @@
-/*eslint-disable react-hooks/exhaustive-deps */
-import React, {useState} from "react";
+import React, {useState, useCallback} from "react";
 import ExpenseService from "../services/ExpenseService";
 
 function ExpenseList({ refreshTrigger }){
@@ -18,7 +17,7 @@ const participantList = participants.split(",").filter(p => p.trim() !== "");
 return (amount / participantList.length).toFixed(2);
 };
 
-const loadExpenses = () => {
+const loadExpenses = useCallback(() => {
 ExpenseService.getAllExpenses().then((response)=>{
 setExpenses(response.data);
 let sum = 0;
@@ -32,7 +31,7 @@ generateSettlements();
 .catch((error)=>{
 console.error("Error fetching expenses:", error);
 });
-};
+}, []);
 
 const toggleExpenses = () => {
 if (showExpenses) {
@@ -45,12 +44,11 @@ setShowExpenses(true);
 };
 
 // Load expenses whenever data changes (new expense added/updated)
-// eslint-disable-next-line react-hooks/exhaustive-deps
 React.useEffect(() => {
   if (showExpenses) {
     loadExpenses();
   }
-}, [refreshTrigger, showExpenses , loadExpenses]);
+}, [refreshTrigger, showExpenses, loadExpenses]);
 
 const generateSettlements = () => {
 ExpenseService.generateSettlements().then((response)=>{
@@ -83,12 +81,12 @@ alert("Error finalizing settlements: " + (error.response?.data?.error || error.m
 const startEdit = (expense) => {
 setEditingExpense(expense.id);
 setEditingValues({
-description: expense.description || "",
-category: expense.category || "",
-date: expense.date ? new Date(expense.date).toISOString().split("T")[0] : "",
-amount: expense.amount || 0,
-paidBy: expense.paidBy || "",
-participants: expense.participants || ""
+description: (expense.description || ""),
+category: (expense.category || ""),
+date: (expense.date ? new Date(expense.date).toISOString().split("T")[0] : ""),
+amount: (expense.amount || 0),
+paidBy: (expense.paidBy || ""),
+participants: (expense.participants || "")
 });
 };
 
@@ -232,8 +230,8 @@ return(
                                     ) : (
                                         <>
                                             <td>{expense.description}</td>
-                                            <td>{expense.category || "Uncategorized"}</td>
-                                            <td>{expense.date ? new Date(expense.date).toLocaleDateString() : "N/A"}</td>
+                                            <td>{(expense.category || "Uncategorized")}</td>
+                                            <td>{(expense.date ? new Date(expense.date).toLocaleDateString() : "N/A")}</td>
                                             <td>₹ {expense.amount}</td>
                                             <td>{expense.paidBy}</td>
                                             <td>{expense.participants}</td>

@@ -1,4 +1,4 @@
-/*eslint-disable */
+/*eslint-disable react-hooks/exhaustive-deps */
 import React, {useState} from "react";
 import ExpenseService from "../services/ExpenseService";
 

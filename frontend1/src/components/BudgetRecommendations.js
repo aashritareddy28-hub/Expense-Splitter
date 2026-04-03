@@ -64,13 +64,15 @@ function BudgetRecommendations() {
             <div style={{ marginBottom: "30px", padding: "20px", border: "2px solid #4CAF50", borderRadius: "8px", backgroundColor: "#f0f8f0", textAlign: "center" }}>
                 <h3>Total Recommended Monthly Budget</h3>
                 <p style={{ fontSize: "36px", fontWeight: "bold", color: "#4CAF50", margin: "10px 0" }}>
-                    ₹{recommendations.totalRecommendedBudget?.toFixed(2) || "0.00"}
+                    ₹{recommendations?.totalRecommendedBudget
+                    ? parseFloat(recommendations.totalRecommendedBudget).toFixed(2) 
+                    : "0.00"}
                 </p>
                 <p style={{ color: "#666" }}>Suggested budget across all categories</p>
             </div>
 
             {/* Category Recommendations */}
-            {(recommendations.budgetSuggestions && recommendations.budgetSuggestions.length > 0) && (
+            {recommendations.budgetSuggestions && recommendations.budgetSuggestions.length > 0 && (
                 <div>
                     <h3>Category-Specific Budgets</h3>
                     <div style={{ display: "grid", gap: "15px" }}>

@@ -49,7 +49,7 @@ React.useEffect(() => {
   if (showExpenses) {
     loadExpenses();
   }
-}, [refreshTrigger, showExpenses]);
+}, [refreshTrigger, showExpenses,loadExpenses]);
 
 const generateSettlements = () => {
 ExpenseService.generateSettlements().then((response)=>{

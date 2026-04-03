@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import ExpenseService from "../services/ExpenseService";
 
-function AddExpense(){
+function AddExpense(props){
 
 const [description,setDescription] = useState("");
 const [amount,setAmount] = useState("");
@@ -53,7 +53,9 @@ setPaidBy("");
 setParticipants("");
 setCategory("Food");
 setDate(new Date().toISOString().split('T')[0]);
-window.location.reload();
+if (typeof props.onDataChange === 'function') {
+  props.onDataChange();
+}
 })
 .catch((error)=>{
 console.error("Error details:", error);

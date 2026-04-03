@@ -114,6 +114,21 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.8);
 }
 
+.expenses-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 15px;
+  width: 100%;
+  max-width: 1600px;
+}
+
+.expenses-grid .card {
+  min-width: 400px;
+  max-width: none;
+  width: 100%;
+  padding: 25px;
+}
+
 .card h2 {
   margin-top: 0;
   margin-bottom: 24px;
@@ -521,4 +536,58 @@ table tr:hover {
     gap: 12px;
     text-align: center;
   }
+
+  .expenses-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+}
+
+/* History Styles */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.history-entry {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  background-color: #f9f9f9;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.history-header {
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+.history-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+.history-content {
+  line-height: 1.6;
+}
+
+.history-section {
+  margin-bottom: 15px;
+}
+
+.history-section p {
+  margin: 5px 0;
+  padding: 5px 10px;
+  background-color: #fff;
+  border-radius: 4px;
+  border-left: 4px solid #007bff;
+}
+
+.history-section p:first-child {
+  font-weight: bold;
+  background-color: #e9ecef;
+  border-left-color: #6c757d;
 }

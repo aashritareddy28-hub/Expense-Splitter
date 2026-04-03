@@ -1,0 +1,8 @@
+{
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "startCommand": "cd backend/expense/expense && java -jar target/expense-0.0.1-SNAPSHOT.jar"
+  }
+}

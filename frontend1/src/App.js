@@ -4,6 +4,7 @@ import ExpenseList from "./components/ExpenseList";
 import Login from "./components/Login";
 import SpendingInsights from "./components/SpendingInsights";
 import BudgetRecommendations from "./components/BudgetRecommendations";
+import History from "./components/History";
 import ExpenseService from "./services/ExpenseService";
 import "./App.css";
 
@@ -11,6 +12,11 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("expenses");
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleRefresh = () => {
+    setRefreshKey((prev) => prev + 1);
+  };
 
   useEffect(() => {
     const user = ExpenseService.getCurrentUser();
@@ -79,19 +85,25 @@ function App() {
           >
             🎯 Budgets
           </button>
+          <button
+            className={`tab-button ${activeTab === "history" ? "active" : ""}`}
+            onClick={() => setActiveTab("history")}
+          >
+            📜 History
+          </button>
         </div>
 
         {/* Tab Content */}
         <div className="tab-content">
           {activeTab === "expenses" && (
-            <>
+            <div className="expenses-grid">
               <div className="card">
-                <AddExpense />
+                <AddExpense onDataChange={handleRefresh} />
               </div>
               <div className="card">
-                <ExpenseList />
+                <ExpenseList refreshTrigger={refreshKey} />
               </div>
-            </>
+            </div>
           )}
 
           {activeTab === "insights" && (
@@ -103,6 +115,12 @@ function App() {
           {activeTab === "budgets" && (
             <div className="card">
               <BudgetRecommendations />
+            </div>
+          )}
+
+          {activeTab === "history" && (
+            <div className="card">
+              <History refreshTrigger={refreshKey} />
             </div>
           )}
         </div>

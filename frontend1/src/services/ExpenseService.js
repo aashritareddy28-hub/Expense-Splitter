@@ -77,6 +77,14 @@ class ExpenseService{
         return axios.put(API_URL + "/settlements/" + id + "/paid", {}, { headers: this.getAuthHeader() });
     }
 
+    finalizeSettlements(){
+        return axios.post(API_URL + "/settlements/finalize", {}, { headers: this.getAuthHeader() });
+    }
+
+    getHistory(){
+        return axios.get(API_URL + "/history", { headers: this.getAuthHeader() });
+    }
+
     getAllPersons(){
         return axios.get(PERSONS_API_URL, { headers: this.getAuthHeader() });
     }
@@ -87,4 +95,5 @@ class ExpenseService{
 
 }
 
-export default new ExpenseService();
+const expenseService = new ExpenseService();
+export default expenseService;

@@ -52,10 +52,10 @@ function SpendingInsights() {
         );
     }
 
-    if (!insights || insights.message) {
+    if (!insights) {
         return (
             <div style={{ padding: "20px", textAlign: "center" }}>
-                <p>{insights?.message || "No insights available"}</p>
+                <p>No insights available</p>
             </div>
         );
     }
@@ -63,6 +63,12 @@ function SpendingInsights() {
     return (
         <div style={{ padding: "20px" }}>
             <h2>Spending Insights</h2>
+
+            {insights.message && (
+                <div style={{ padding: "10px", marginBottom: "20px", border: "1px solid #ffa726", borderRadius: "4px", backgroundColor: "#fff3e0", color: "#e65100" }}>
+                    <p><strong>Note:</strong> {insights.message}</p>
+                </div>
+            )}
 
             {/* Summary Cards */}
             <div style={{ display: "flex", gap: "20px", marginBottom: "30px", flexWrap: "wrap" }}>

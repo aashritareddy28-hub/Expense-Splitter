@@ -2,10 +2,11 @@ package com.expense.backend.entity;
 
 import javax.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "expenses")
-public class Expense {
+@Table(name = "expense_history")
+public class ExpenseHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,33 +22,36 @@ public class Expense {
     private String paidBy;
 
     @Column(nullable = false)
-    private String participants; // comma-separated strings
+    private String participants;
 
     @Column(nullable = false)
-    private String category; // Food, Transportation, Entertainment, etc.
+    private String category;
 
     @Column(nullable = true)
     private LocalDate date;
+
+    @Column(nullable = false, columnDefinition = "DATETIME")
+    private LocalDateTime archivedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    public Expense() {
+    public ExpenseHistory() {
     }
 
-    public Expense(String description, Double amount, String paidBy, String participants, String category, LocalDate date, User user) {
-        this.description = description;
-        this.amount = amount;
-        this.paidBy = paidBy;
-        this.participants = participants;
-        this.category = category;
-        this.date = date;
-        this.user = user;
+    public ExpenseHistory(Expense expense, LocalDateTime archivedAt) {
+        this.description = expense.getDescription();
+        this.amount = expense.getAmount();
+        this.paidBy = expense.getPaidBy();
+        this.participants = expense.getParticipants();
+        this.category = expense.getCategory();
+        this.date = expense.getDate();
+        this.archivedAt = archivedAt;
+        this.user = expense.getUser();
     }
 
     // Getters and Setters
-
     public Long getId() {
         return id;
     }
@@ -65,7 +69,7 @@ public class Expense {
     }
 
     public Double getAmount() {
-        return amount != null ? amount : 0.0;
+        return amount;
     }
 
     public void setAmount(Double amount) {
@@ -104,24 +108,19 @@ public class Expense {
         this.date = date;
     }
 
+    public LocalDateTime getArchivedAt() {
+        return archivedAt;
+    }
+
+    public void setArchivedAt(LocalDateTime archivedAt) {
+        this.archivedAt = archivedAt;
+    }
+
     public User getUser() {
         return user;
     }
 
     public void setUser(User user) {
         this.user = user;
-    }
-
-    @Override
-    public String toString() {
-        return "Expense{" +
-                "id=" + id +
-                ", description='" + description + '\'' +
-                ", amount=" + amount +
-                ", paidBy='" + paidBy + '\'' +
-                ", participants='" + participants + '\'' +
-                ", category='" + category + '\'' +
-                ", date=" + date +
-                '}';
     }
 }

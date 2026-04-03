@@ -40,7 +40,7 @@ function BudgetRecommendations() {
         );
     }
 
-    if (!recommendations || recommendations.message) {
+    if (!recommendations || (!recommendations.budgetSuggestions || recommendations.budgetSuggestions.length === 0) && recommendations.message) {
         return (
             <div style={{ padding: "20px", textAlign: "center" }}>
                 <p>{recommendations?.message || "No budget recommendations available. Add more expenses to get personalized recommendations."}</p>
@@ -75,7 +75,7 @@ function BudgetRecommendations() {
                                     <h4 style={{ margin: "0", color: "#333" }}>{suggestion.category}</h4>
                                     <div style={{ textAlign: "right" }}>
                                         <div style={{ fontSize: "20px", fontWeight: "bold", color: "#4CAF50" }}>
-                                            ₹{suggestion.suggestedBudget.toFixed(2)}
+                                            ₹{(suggestion.suggestedBudget ?? 0).toFixed(2)}
                                         </div>
                                         <div style={{ fontSize: "12px", color: "#666" }}>recommended</div>
                                     </div>
@@ -83,10 +83,10 @@ function BudgetRecommendations() {
 
                                 <div style={{ display: "flex", gap: "20px", fontSize: "14px", color: "#666" }}>
                                     <div>
-                                        <strong>Average:</strong> ₹{suggestion.monthlyAverage.toFixed(2)}/month
+                                        <strong>Average:</strong> ₹{(suggestion.monthlyAverage ?? 0).toFixed(2)}/month
                                     </div>
                                     <div>
-                                        <strong>Total Spent:</strong> ₹{suggestion.totalSpent3Months.toFixed(2)} ({recommendations.dataPeriod})
+                                        <strong>Total Spent:</strong> ₹{(suggestion.totalSpent ?? 0).toFixed(2)} ({recommendations.dataPeriod})
                                     </div>
                                     <div>
                                         <strong>Transactions:</strong> {suggestion.expenseCount}

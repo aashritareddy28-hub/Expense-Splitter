@@ -1,13 +1,13 @@
 import React, {useState} from "react";
 import ExpenseService from "../services/ExpenseService";
 
-function ExpenseList(){
+function ExpenseList({ refreshTrigger }){
 
 const [expenses,setExpenses] = useState([]);
 const [total,setTotal] = useState(0);
 const [settlements,setSettlements] = useState([]);
-const [showSettlements,setShowSettlements] = useState(false);
-const [showExpenses,setShowExpenses] = useState(false);
+const [showSettlements,setShowSettlements] = useState(true);
+const [showExpenses,setShowExpenses] = useState(true);
 const [editingExpense, setEditingExpense] = useState(null);
 const [editingValues, setEditingValues] = useState({});
 
@@ -25,7 +25,8 @@ response.data.forEach(e=>{
 sum += e.amount;
 });
 setTotal(sum.toFixed(2));
-loadSettlements();
+// Use generateSettlements to keep settlements in sync with current expense data and paid flags
+generateSettlements();
 })
 .catch((error)=>{
 console.error("Error fetching expenses:", error);
@@ -42,14 +43,13 @@ setShowExpenses(true);
 }
 };
 
-const loadSettlements = () => {
-ExpenseService.getSettlements().then((response)=>{
-setSettlements(response.data);
-})
-.catch((error)=>{
-console.error("Error fetching settlements:", error);
-});
-};
+// Load expenses whenever data changes (new expense added/updated)
+// eslint-disable-next-line react-hooks/exhaustive-deps
+React.useEffect(() => {
+  if (showExpenses) {
+    loadExpenses();
+  }
+}, [refreshTrigger, showExpenses]);
 
 const generateSettlements = () => {
 ExpenseService.generateSettlements().then((response)=>{
@@ -62,10 +62,20 @@ console.error("Error generating settlements:", error);
 
 const markAsPaid = (id) => {
 ExpenseService.markSettlementAsPaid(id).then(()=>{
-loadSettlements(); // Reload to hide the paid one
+generateSettlements(); // Recompute after payment so same page updates
 })
 .catch((error)=>{
 console.error("Error marking as paid:", error);
+});
+};
+
+const finalizeSettlements = () => {
+ExpenseService.finalizeSettlements().then((response)=>{
+alert(response.data.message || "Finalization completed");
+loadExpenses();
+}).catch((error)=>{
+console.error("Error finalizing settlements:", error);
+alert("Error finalizing settlements: " + (error.response?.data?.error || error.message));
 });
 };
 
@@ -293,12 +303,22 @@ return(
                 <div className="settlements-container settled">
                     <h3>✅ All Settled!</h3>
                     <p>Everyone is even. No payments needed.</p>
-                    <button
-                        onClick={generateSettlements}
-                        className="btn-info"
-                    >
-                        🔄 Generate Settlements
-                    </button>
+                    <div className="settlement-actions">
+                        {/* Hide generate button when there are no pending settlements (all paid) */}
+                        {expenses.length === 0 ? (
+                            <p>Add an expense to create settlements again.</p>
+                        ) : (
+                            <p style={{ color: "#555", fontSize: "14px" }}>
+                                New or updated expenses will automatically produce new settlement suggestions.
+                            </p>
+                        )}
+                        <button
+                            onClick={finalizeSettlements}
+                            className="btn-success"
+                        >
+                            🧾 Finalize and Clear Data
+                        </button>
+                    </div>
                 </div>
             )}
         </>

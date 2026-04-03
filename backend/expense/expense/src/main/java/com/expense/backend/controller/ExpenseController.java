@@ -1,10 +1,14 @@
 package com.expense.backend.controller;
 
 import com.expense.backend.entity.Expense;
-import com.expense.backend.entity.User;
+import com.expense.backend.entity.ExpenseHistory;
 import com.expense.backend.entity.Settlement;
-import com.expense.backend.repository.SettlementRepository;
+import com.expense.backend.entity.SettlementHistory;
+import com.expense.backend.entity.User;
+import com.expense.backend.repository.ExpenseHistoryRepository;
 import com.expense.backend.repository.ExpenseRepository;
+import com.expense.backend.repository.SettlementHistoryRepository;
+import com.expense.backend.repository.SettlementRepository;
 import com.expense.backend.repository.UserRepository;
 import com.expense.backend.service.AnalyticsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
@@ -32,6 +37,12 @@ public class ExpenseController {
 
     @Autowired
     private SettlementRepository settlementRepository;
+
+    @Autowired
+    private SettlementHistoryRepository settlementHistoryRepository;
+
+    @Autowired
+    private ExpenseHistoryRepository expenseHistoryRepository;
 
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -266,13 +277,13 @@ public class ExpenseController {
         User currentUser = getCurrentUser();
         List<Expense> expenses = expenseRepository.findByUser(currentUser);
 
-        // Delete existing unpaid settlements
-        List<Settlement> existing = settlementRepository.findByUserAndPaid(currentUser, false);
-        settlementRepository.deleteAll(existing);
+        // Remove existing unpaid settlements as they will be recomputed.
+        List<Settlement> existingUnpaid = settlementRepository.findByUserAndPaid(currentUser, false);
+        settlementRepository.deleteAll(existingUnpaid);
 
         Map<String, Double> balances = new HashMap<>();
 
-        // Calculate balances
+        // Calculate balances from all expenses
         for (Expense expense : expenses) {
             String paidBy = expense.getPaidBy();
             double amount = expense.getAmount();
@@ -297,9 +308,20 @@ public class ExpenseController {
             }
         }
 
-        // Calculate Settlements
+        // Adjust for already paid settlements so they are not re-generated as unpaid
+        List<Settlement> paidSettlements = settlementRepository.findByUserAndPaid(currentUser, true);
+        for (Settlement paid : paidSettlements) {
+            String from = paid.getFromPerson();
+            String to = paid.getToPerson();
+            double amount = paid.getAmount();
+
+            // The payor has already reduced their debt, and the payee has already received funds
+            balances.put(from, balances.getOrDefault(from, 0.0) + amount);
+            balances.put(to, balances.getOrDefault(to, 0.0) - amount);
+        }
+
+        // Recompute outstanding settlements
         List<Settlement> settlements = new ArrayList<>();
-        
         List<Map.Entry<String, Double>> debtors = new ArrayList<>();
         List<Map.Entry<String, Double>> creditors = new ArrayList<>();
 
@@ -323,7 +345,6 @@ public class ExpenseController {
 
             double debt = Math.abs(debtor.getValue());
             double credit = creditor.getValue();
-
             double amountToSettle = Math.min(debt, credit);
 
             Settlement settlement = new Settlement(debtor.getKey(), creditor.getKey(), amountToSettle, LocalDate.now(), currentUser);
@@ -343,6 +364,77 @@ public class ExpenseController {
         return settlements;
     }
 
+    @PostMapping("/settlements/finalize")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    public Map<String, String> finalizeAndArchiveSettlements() {
+        User currentUser = getCurrentUser();
+
+        List<Settlement> unpaid = settlementRepository.findByUserAndPaid(currentUser, false);
+        if (!unpaid.isEmpty()) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", "Cannot finalize: there are unpaid settlements.");
+            return response;
+        }
+
+        List<Settlement> paid = settlementRepository.findByUserAndPaid(currentUser, true);
+        List<Expense> expenses = expenseRepository.findByUser(currentUser);
+
+        // Build history summary for audit/AI tracking.
+        StringBuilder summary = new StringBuilder();
+        summary.append("Settlements finalized at ").append(LocalDate.now()).append("\n");
+        summary.append("Expense count: ").append(expenses.size()).append("\n");
+        summary.append("Paid settlement count: ").append(paid.size()).append("\n");
+        summary.append("Expenses:\n");
+        for (Expense e : expenses) {
+            summary.append(e.toString()).append("\n");
+        }
+        summary.append("Paid Settlements:\n");
+        for (Settlement p : paid) {
+            summary.append(p.getFromPerson()).append("->").append(p.getToPerson()).append(": ").append(p.getAmount()).append("\n");
+        }
+
+        // Add insights and budgets to history
+        try {
+            Map<String, Object> insights = analyticsService.getSpendingInsights(currentUser);
+            summary.append("\nSpending Insights:\n");
+            for (Map.Entry<String, Object> entry : insights.entrySet()) {
+                summary.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+            }
+        } catch (Exception e) {
+            summary.append("\nSpending Insights: Error retrieving insights\n");
+        }
+
+        try {
+            Map<String, Object> budgets = analyticsService.getBudgetRecommendations(currentUser);
+            summary.append("\nBudget Recommendations:\n");
+            for (Map.Entry<String, Object> entry : budgets.entrySet()) {
+                summary.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+            }
+        } catch (Exception e) {
+            summary.append("\nBudget Recommendations: Error retrieving budgets\n");
+        }
+
+        SettlementHistory history = new SettlementHistory(currentUser, LocalDate.now().atStartOfDay(), summary.toString());
+        settlementHistoryRepository.save(history);
+
+        // Archive all expenses to history before deleting
+        LocalDateTime archivedAt = LocalDateTime.now();
+        List<ExpenseHistory> expenseHistories = new ArrayList<>();
+        for (Expense expense : expenses) {
+            expenseHistories.add(new ExpenseHistory(expense, archivedAt));
+        }
+        expenseHistoryRepository.saveAll(expenseHistories);
+
+        // Delete all user expenses and settlements after finalization
+        settlementRepository.deleteAll(paid);
+        settlementRepository.deleteAll(unpaid);
+        expenseRepository.deleteAll(expenses);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Finalized settlements stored in history and user data cleared.");
+        return response;
+    }
+
     @PutMapping("/settlements/{id}/paid")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public Settlement markAsPaid(@PathVariable Long id) {
@@ -353,5 +445,61 @@ public class ExpenseController {
             return settlementRepository.save(settlement);
         }
         return null;
+    }
+
+    @GetMapping("/history")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    public List<Map<String, Object>> getHistory() {
+        User currentUser = getCurrentUser();
+
+        // Get current expenses
+        List<Expense> currentExpenses = expenseRepository.findByUser(currentUser);
+
+        // Get historical expenses
+        List<ExpenseHistory> historicalExpenses = expenseHistoryRepository.findByUser(currentUser);
+
+        // Combine into a single list with metadata
+        List<Map<String, Object>> allExpenses = new ArrayList<>();
+
+        // Add current expenses
+        for (Expense expense : currentExpenses) {
+            Map<String, Object> expenseMap = new HashMap<>();
+            expenseMap.put("id", expense.getId());
+            expenseMap.put("description", expense.getDescription());
+            expenseMap.put("amount", expense.getAmount());
+            expenseMap.put("paidBy", expense.getPaidBy());
+            expenseMap.put("participants", expense.getParticipants());
+            expenseMap.put("category", expense.getCategory());
+            expenseMap.put("date", expense.getDate());
+            expenseMap.put("isHistorical", false);
+            allExpenses.add(expenseMap);
+        }
+
+        // Add historical expenses
+        for (ExpenseHistory expense : historicalExpenses) {
+            Map<String, Object> expenseMap = new HashMap<>();
+            expenseMap.put("id", expense.getId());
+            expenseMap.put("description", expense.getDescription());
+            expenseMap.put("amount", expense.getAmount());
+            expenseMap.put("paidBy", expense.getPaidBy());
+            expenseMap.put("participants", expense.getParticipants());
+            expenseMap.put("category", expense.getCategory());
+            expenseMap.put("date", expense.getDate());
+            expenseMap.put("isHistorical", true);
+            expenseMap.put("archivedAt", expense.getArchivedAt());
+            allExpenses.add(expenseMap);
+        }
+
+        // Sort by date descending (newest first), handling null dates
+        allExpenses.sort((a, b) -> {
+            LocalDate dateA = (LocalDate) a.get("date");
+            LocalDate dateB = (LocalDate) b.get("date");
+            if (dateA == null && dateB == null) return 0;
+            if (dateA == null) return 1;
+            if (dateB == null) return -1;
+            return dateB.compareTo(dateA);
+        });
+
+        return allExpenses;
     }
 }

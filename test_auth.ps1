@@ -50,6 +50,7 @@ try {
             amount = 50.00
             paidBy = "Alice"
             participants = "Alice,Bob"
+            category = "Food"
         } | ConvertTo-Json
 
         $expenseResponse = Invoke-WebRequest -Uri "http://localhost:9090/api/expenses/add" `
